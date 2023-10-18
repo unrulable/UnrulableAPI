@@ -1,21 +1,31 @@
 using Microsoft.AspNetCore.Mvc;
 using NBitcoin;
-using NBitcoin.RPC;
 using Microsoft.AspNetCore.Authorization;
+using NBitcoin.RPC;
+using System;
+using System.Net;
 
 [AllowAnonymous] // Allow anonymous access to this action
 [Route("api/bitcoin")]
 [ApiController]
 public class BitcoinController : ControllerBase
 {
-    private readonly RPCClient rpcClient;
+    private readonly RPCClient rpcClient, rpcConnection;
 
+    /// <summary>
+    /// The Bitcoin Constructor
+    /// </summary>
     public BitcoinController()
     {
-        var nodeUri = new Uri(""); 
-        var network = Network.TestNet; 
-        var credentials = new RPCCredentialString();
-        rpcClient = new RPCClient(credentials, nodeUri.ToString(), network);
+        string rpcUser = "your_rpc_username";
+        string rpcPassword = "your_rpc_password";
+        string credentials = $"{rpcUser}:{rpcPassword}";
+        
+        // Set the RPC connection parameters
+        var rpcConnection = new RPCClient(
+            credentials,
+            "localhost", 
+            Network.Main);
     }
 
     [Route("balance")]
@@ -42,7 +52,9 @@ public class BitcoinController : ControllerBase
     {
         try
         {
-            var blockchainInfo = await rpcClient.GetBlockchainInfoAsync();
+            var blockchainInfo = rpcConnection.GetBlockchainInfo();
+            Console.WriteLine("Blockchain Info:");
+            Console.WriteLine(blockchainInfo);
             return new
             {
                 chain = blockchainInfo.Chain,
@@ -52,9 +64,13 @@ public class BitcoinController : ControllerBase
                 difficulty = blockchainInfo.Difficulty
             };
         }
+        catch (RPCException ex)
+        {
+            return $"RPC Error: {ex.Message}";
+        }
         catch (Exception ex)
         {
-            return BadRequest(new { error = ex.Message });
+            return $"Error: {ex.Message}";
         }
     }
 }

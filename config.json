@@ -1,0 +1,6 @@
+{
+    "RpcConfig": {
+      "RpcUser": "your_rpc_username",
+      "RpcPassword": "your_rpc_password"
+    }
+  }
