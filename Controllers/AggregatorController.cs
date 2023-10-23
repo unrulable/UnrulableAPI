@@ -2,9 +2,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using NBitcoin;
 using NBitcoin.RPC;
-using System;
-using System.Collections.Generic;
-using System.Net;
 using Newtonsoft.Json.Linq;
 using Microsoft.Extensions.Options;
 
@@ -59,7 +56,7 @@ public class AggregatorController : ControllerBase
         foreach (var (address, amount) in addressesAndAmounts)
         {
             // Validate Bitcoin addresses (in real-world usage, validate against a Bitcoin node).
-            if (BitcoinAddressValidator.IsValidBitcoinAddress(address))
+            if (Helpers.IsValidBitcoinAddress(address))
             {
                 // Add the amount to the total.
                 totalAmount += amount;
@@ -91,11 +88,15 @@ public class AggregatorController : ControllerBase
 
                 foreach (JObject transaction in transactions.Result)
                 {
-                    var address = transaction["address"].ToString();
+                    var address = transaction?["address"]?.ToString();
                     if (address == targetAddress)
                     {
-                        decimal amountReceived = Money.Coins(transaction["amount"].Value<decimal>()).ToUnit(MoneyUnit.BTC);
-                        result.Add((targetAddress, amountReceived));
+                        var amounts = transaction?["amount"]?.Value<decimal>();
+                        if(amounts != null)
+                        {
+                            decimal amountReceived = Money.Coins((decimal)amounts).ToUnit(MoneyUnit.BTC);
+                            result.Add((targetAddress, amountReceived));
+                        }
                     }
                 }
             }
@@ -109,29 +110,5 @@ public class AggregatorController : ControllerBase
             }
 
         return result;
-    }
-}
-
-/// <summary>
-/// Bitcoin address validator.
-/// </summary>
-public static class BitcoinAddressValidator
-{
-    /// <summary>
-    /// Validates a Bitcoin address.
-    /// </summary>
-    /// <param name="address"></param>
-    /// <returns>Returns true or false</returns>
-    public static bool IsValidBitcoinAddress(string address)
-    {
-        try
-        {
-            var bitcoinAddress = BitcoinAddress.Create(address, Network.Main);
-            return true;
-        }
-        catch (FormatException)
-        {
-            return false;
-        }
     }
 }
