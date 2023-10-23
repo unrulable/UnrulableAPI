@@ -29,14 +29,25 @@ public class CreateBitcoinWalletController : ControllerBase
     /// <returns></returns>
     [HttpGet]
     [Route("api/createbitcoinwallet")]
-    public async Task<ActionResult<string>?> CreateNewWallet()
+    public async Task<ActionResult<CreateWalletResponse>> CreateNewWallet(string passphrase)
     {
-        Key privateKey = new Key();
-        BitcoinAddress address = privateKey.PubKey.GetAddress(ScriptPubKeyType.Legacy, Network.Main);
+        // Generate a new BIP39 mnemonic phrase with a secure entropy
+        Mnemonic mnemonic = new Mnemonic(Wordlist.English, WordCount.Twelve);
+        string generatedMnemonic = mnemonic.ToString();
 
-        string privateKeyWIF = privateKey.ToString(Network.Main);
-        string addressString = address.ToString();
+        // Derive the root key from the mnemonic and passphrase
+        ExtKey extendedKey = mnemonic.DeriveExtKey(passphrase);
 
-        return await Task.FromResult(addressString);
+        // Derive a Bitcoin address from the extended key
+        Key privateKey = extendedKey.PrivateKey;
+        BitcoinAddress bitcoinAddress = privateKey.PubKey.GetAddress(ScriptPubKeyType.Legacy, Network.Main);
+
+        var response = new CreateWalletResponse
+        {
+            Mnemonic = generatedMnemonic,
+            BitcoinAddress = bitcoinAddress
+        };
+        
+        return await Task.FromResult(response);
     }
 }
