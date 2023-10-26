@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.Extensions.Options;
 
 [AllowAnonymous]
 [ApiController]
@@ -8,7 +7,6 @@ public class InitialSetupController : ControllerBase
 {
     #region Private Fields
     private readonly IConfiguration _configuration;
-    private readonly IOptions<NodeConfiguration> _bitcoinNodeConfig;
     #endregion
 
     /// <summary>
@@ -16,10 +14,9 @@ public class InitialSetupController : ControllerBase
     /// </summary>
     /// <param name="configuration"></param>
     /// <param name="bitcoinNodeConfig"></param>
-    public InitialSetupController(IConfiguration configuration, IOptions<NodeConfiguration> bitcoinNodeConfig)
+    public InitialSetupController(IConfiguration configuration)
     {
         _configuration = configuration;
-        _bitcoinNodeConfig = bitcoinNodeConfig;
     }
 
     /// <summary>
