@@ -49,6 +49,8 @@ public class BackupController : ControllerBase
     /// <param name="password"></param>
     /// <param name="walletData"></param>
     /// <returns></returns>
+    [HttpGet]
+    [Route("api/backupwallet")]
     public bool BackupWallet(string backupFilePath, string password, WalletInfo walletData)
     {
         try
@@ -78,35 +80,27 @@ public class BackupController : ControllerBase
     /// <param name="password"></param>
     /// <param name="walletData"></param>
     /// <returns></returns>
-    public FileContentResult RestoreWallet(string backupFilePath, string password, out WalletInfo walletData)
+    [HttpGet]
+    [Route("api/restorewallet")]
+    public async Task<ActionResult<FileContentResult>> RestoreWallet(string backupFilePath, string password, WalletInfo walletData)
     {
-        walletData = null;
-
-        try
+        if (!System.IO.File.Exists(backupFilePath))
         {
-            if (!System.IO.File.Exists(backupFilePath))
-            {
-                Console.WriteLine("Backup file not found.");
-                return null;
-            }
-
-            string encryptedData = System.IO.File.ReadAllText(backupFilePath);
-
-            string decryptedData = DecryptData(encryptedData, password);
-            
-            walletData = JsonConvert.DeserializeObject<WalletInfo>(decryptedData);
-
-            // Return the decrypted wallet data as a file
-            byte[] fileBytes = Encoding.UTF8.GetBytes(decryptedData);
-            var fileContentResult = new FileContentResult(fileBytes, "application/octet-stream");
-            fileContentResult.FileDownloadName = "wallet.dat";
-            return fileContentResult;
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error during wallet restoration: {ex.Message}");
+            Console.WriteLine("Backup file not found.");
             return null;
         }
+
+        string encryptedData = System.IO.File.ReadAllText(backupFilePath);
+
+        string decryptedData = DecryptData(encryptedData, password);
+        
+        walletData = JsonConvert.DeserializeObject<WalletInfo>(decryptedData);
+
+        // Return the decrypted wallet data as a file
+        byte[] fileBytes = Encoding.UTF8.GetBytes(decryptedData);
+        var fileContentResult = new FileContentResult(fileBytes, "application/octet-stream");
+        fileContentResult.FileDownloadName = "wallet.dat";
+        return await Task.FromResult(fileContentResult);
     }
 
     /// <summary>
